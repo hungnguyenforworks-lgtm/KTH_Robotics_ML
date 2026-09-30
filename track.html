@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KTH Course Tracker: ML vs Robotics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .tab-active { border-bottom: 4px solid #004b87; color: #004b87; font-weight: bold; }
+        .mandatory { background-color: #fef2f2; color: #991b1b; }
+        .elective { background-color: #f0fdf4; color: #166534; }
+        .recommended { background-color: #eff6ff; color: #1e40af; }
+        .flow-node { transition: all 0.3s ease; position: relative; z-index: 10; cursor: pointer; background-color: white; }
+        .flow-node:hover { transform: scale(1.05); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 20; }
+        .flow-node.highlight { border-color: #004b87; box-shadow: 0 0 10px rgba(0, 75, 135, 0.3); z-index: 20; }
+        .flow-connector { position: absolute; height: 2px; background-color: #cbd5e1; z-index: 0; transform-origin: left center; pointer-events: none; transition: all 0.3s ease; }
+        .flow-connector.highlight { background-color: #004b87; height: 3px; box-shadow: 0 0 8px rgba(0, 75, 135, 0.5); z-index: 5; }
+        .add-course-slot {
+            position: relative;
+            z-index: 50;
+            border: 2px dashed #cbd5e1;
+            background-color: rgba(203, 213, 225, 0.1);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .add-course-slot:hover {
+            border-color: #004b87;
+            background-color: rgba(0, 75, 135, 0.05);
+            color: #004b87;
+        }
+        .period-section {
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .course-tooltip {
+            position: absolute;
+            z-index: 100;
+            background: #1e293b;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            max-width: 300px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <div id="tooltip" class="course-tooltip"></div>
+    <header class="bg-[#004b87] text-white py-8 px-4 shadow-lg">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-3xl font-bold">KTH Course Comparison & Roadmap</h1>
+            <p class="mt-2 opacity-90">Master's in Machine Learning vs. Systems, Control and Robotics</p>
+        </div>
+    </header>
+    <nav class="bg-white shadow-md sticky top-0 z-10">
+        <div class="max-w-6xl mx-auto flex justify-center space-x-8">
+            <button onclick="showTab('comparison')" id="btn-comparison" class="py-4 px-6 transition-all hover:text-blue-700">Comparison</button>
+            <button onclick="showTab('ml')" id="btn-ml" class="py-4 px-6 tab-active transition-all hover:text-blue-700">ML Path</button>
+            <button onclick="showTab('robotics')" id="btn-robotics" class="py-4 px-6 transition-all hover:text-blue-700">Robotics Path</button>
+        </div>
+    </nav>
+    <main class="max-w-full mx-auto py-8 px-4">
+        <div id="tab-comparison" class="tab-content hidden">
+            <h2 class="text-2xl font-semibold mb-6 flex items-center"><span class="mr-2">🔄</span> Program Comparison</h2>
+            <div id="comparison-container" class="space-y-6"></div>
+        </div>
+        <div id="tab-ml" class="tab-content">
+            <div class="flex gap-8">
+                <div class="w-64 flex-shrink-0">
+                    <h2 class="text-2xl font-semibold mb-6 flex items-center"><span class="mr-2">🧠</span> ML Requirements</h2>
+                    <div id="ml-requirements" class="requirement-card space-y-3"></div>
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg text-xs text-blue-800 italic">
+                        Compulsory and conditionally elective courses from one track are recommended on all other tracks.
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div id="ml-roadmap" class="relative flex gap-6 overflow-x-auto pb-6"></div>
+                </div>
+            </div>
+        </div>
+        <div id="tab-robotics" class="tab-content hidden">
+            <div class="flex gap-8">
+                <div class="w-64 flex-shrink-0">
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Robotics Track:</label>
+                        <select id="robotics-track-select" onchange="changeRoboticsTrack(this.value)" class="w-full p-2 border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="all">All Courses (Overview)</option>
+                            <option value="control">Learning, Decision and Control Systems Track</option>
+                            <option value="robotics">Robotics and Autonomous Systems Track</option>
+                        </select>
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Degree project (choose one):</label>
+                        <select id="robotics-degree-select" onchange="changeRoboticsDegreeProject(this.value)" class="w-full p-2 border rounded-lg bg-white shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <option value="DA236X">Computer Science and Engineering (DA236X)</option>
+                            <option value="EA236X">Electrical Engineering (EA236X)</option>
+                        </select>
+                    </div>
+                    <h2 class="text-2xl font-semibold mb-6 flex items-center"><span class="mr-2">🤖</span> Robotics Requirements</h2>
+                    <div id="robotics-requirements" class="requirement-card space-y-3"></div>
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg text-xs text-blue-800 italic">
+                        Compulsory and conditionally elective courses from one track are recommended on all other tracks.
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div id="robotics-roadmap" class="relative flex gap-6 overflow-x-auto pb-6"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Period Change Modal -->
+    <div id="period-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 class="text-xl font-bold mb-4">Change Study Period</h3>
+            <p id="modal-course-name" class="text-gray-600 mb-4"></p>
+            <div class="grid grid-cols-2 gap-2 mb-6" id="period-options"></div>
+            <div class="flex justify-end">
+                <button onclick="closePeriodModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Add Course Modal -->
+    <div id="add-course-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <h3 class="text-xl font-bold mb-4">Add Course to <span id="modal-program-name"></span></h3>
+            <p id="modal-period-name" class="text-gray-500 mb-4 font-medium"></p>
+            <div class="max-h-60 overflow-y-auto space-y-2 mb-6" id="available-courses-list"></div>
+            <div class="flex justify-end">
+                <button onclick="closeAddModal()" class="px-4 py-2 text-gray-500 hover:text-gray-700">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="courseScheduling.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof showTab === 'function') {
+                showTab('ml');
+            }
+        });
+    </script>
+</body>
+</html>
