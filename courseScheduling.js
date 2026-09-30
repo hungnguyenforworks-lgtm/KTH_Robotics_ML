@@ -8,6 +8,7 @@ const machineLearningCourses = [
     name: "Introduction to the Philosophy of Science and Research Methodology",
     totalHP: 7.5,
     programmeYears: [1],
+    tracks: ["COMMON"],
     category: "mandatory",
     periods: { "Y1-P1": 3.0, "Y1-P2": 4.5 }
   },
@@ -16,6 +17,7 @@ const machineLearningCourses = [
     name: "Foundations of Machine Learning",
     totalHP: 7.5,
     programmeYears: [1],
+    tracks: ["COMMON"],
     category: "mandatory",
     periods: { "Y1-P1": 7.5 }
   },
@@ -24,6 +26,7 @@ const machineLearningCourses = [
     name: "Program Integrating Course in Machine Learning",
     totalHP: 3.0,
     programmeYears: [1, 2],
+    tracks: ["COMMON"],
     category: "mandatory",
     periods: {
       "Y1-P1": 0.5,
@@ -47,6 +50,7 @@ const machineLearningCourses = [
     name: "Machine Learning, Advanced Course",
     totalHP: 7.5,
     programmeYears: [1, 2],
+    tracks: ["COMMON"],
     category: "mandatory",
     periods: { "Y1-P2": 7.5 }
   },
